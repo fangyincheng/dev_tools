@@ -5,7 +5,7 @@ plugins {
 }
 
 group = "com.fyc"
-version = "release-1.0"
+version = "1.0"
 
 repositories {
     mavenCentral()
@@ -35,13 +35,13 @@ tasks {
         untilBuild.set("242.*")
     }
 
-    signPlugin {
+//    signPlugin {
 //        certificateChain.set(System.getenv("CERTIFICATE_CHAIN"))
 //        privateKey.set(System.getenv("PRIVATE_KEY"))
 //        password.set(System.getenv("PRIVATE_KEY_PASSWORD"))
-    }
+//    }
 
     publishPlugin {
-        token.set("perm:WWluY2hlbmdfRmFuZw==.OTItMTAyMjY=.WoCy50RlY89yDMfYEu6sKl8DMzOwDY")
+        token.set(System.getenv("TOKEN"))
     }
 }

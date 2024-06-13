@@ -15,8 +15,8 @@
          Guidelines: https://plugins.jetbrains.com/docs/marketplace/plugin-overview-page.html#plugin-description -->
     <description><![CDATA[
     开发工具集合。<br>
-    目前提供浏览器插件，在IDEA中浏览网页。其他功能持续更新中...
-    注意：
+    目前提供浏览器插件，在IDEA中浏览网页。其他功能持续更新中...<br>
+    注意：<br>
     1. JCEF is manually disabled in headless env via 'ide.browser.jcef.headless.enabled=false'
   ]]></description>
 

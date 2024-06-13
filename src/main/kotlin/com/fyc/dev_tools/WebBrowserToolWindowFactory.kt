@@ -24,7 +24,8 @@ class WebBrowserToolWindowFactory : ToolWindowFactory {
 
     override fun createToolWindowContent(project: Project, toolWindow: ToolWindow) {
         val editWindow = EditWindow(toolWindow)
-        val addContent = ContentFactory.getInstance().createContent(editWindow.getContent(), "ADD", true)
+        val addContent = ContentFactory.getInstance().createContent(editWindow.getContent(), "ADD", false)
+        addContent.isCloseable = false
         toolWindow.contentManager.addContent(addContent, 0)
 
         toolWindow.contentManager.addContentManagerListener(object : ContentManagerListener {
@@ -43,7 +44,7 @@ class WebBrowserToolWindowFactory : ToolWindowFactory {
                 val webBrowserWindow = WebBrowserWindow(toolWindow, Config.getInstance().urls.get(name).toString())
                 val content =
                     ContentFactory.getInstance()
-                        .createContent(webBrowserWindow.getContent(), name, false)
+                        .createContent(webBrowserWindow.getContent(), name, true)
                 toolWindow.contentManager.addContent(content, index + 1)
             }
         }
@@ -77,7 +78,7 @@ class WebBrowserToolWindowFactory : ToolWindowFactory {
                 }
                 val webBrowserWindow = WebBrowserWindow(toolWindow, edit.text)
                 val content =
-                    ContentFactory.getInstance().createContent(webBrowserWindow.getContent(), name.text, false)
+                    ContentFactory.getInstance().createContent(webBrowserWindow.getContent(), name.text, true)
                 toolWindow.contentManager.addContent(content)
                 toolWindow.contentManager.setSelectedContent(content)
 
