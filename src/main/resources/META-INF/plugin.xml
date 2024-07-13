@@ -5,18 +5,23 @@
 
     <!-- Public plugin name should be written in Title Case.
          Guidelines: https://plugins.jetbrains.com/docs/marketplace/plugin-overview-page.html#plugin-name -->
-    <name>Dev_tools</name>
+    <name>DevFamily</name>
 
     <!-- A displayed Vendor name or Organization ID displayed on the Plugins Page. -->
-    <vendor email="fangyincheng@sina.com" >fangyc</vendor>
+    <vendor email="fangyincheng@sina.com">fangyc</vendor>
 
     <!-- Description of the plugin displayed on the Plugin Page and IDE Plugin Manager.
          Simple HTML elements (text formatting, paragraphs, and lists) can be added inside of <![CDATA[ ]]> tag.
          Guidelines: https://plugins.jetbrains.com/docs/marketplace/plugin-overview-page.html#plugin-description -->
     <description><![CDATA[
-    dev tool collections.<br>
-    Currently providing browser plugins for browsing web pages in IDEA.Other functions are constantly being updated...<br>
-    Be careful: <br>
+    Dev tool collections.<br>
+    Providing tools:
+    1. browser plugins for browsing web pages in IDEA.<br>
+    2. Url encode/decode.
+    3. Base64 encode/decode.
+    4. Unicode encode/decode.
+    Other functions are constantly being updated...<br>
+    Be careful:<br>
     1. JCEF is manually disabled in headless env via 'ide.browser.jcef.headless.enabled=false'
   ]]></description>
 
@@ -32,5 +37,7 @@
         <toolWindow factoryClass="com.fyc.dev_tools.WebBrowserToolWindowFactory" id="WebBrowser"
                     icon="AllIcons.General.Web" anchor="bottom"
                     largeStripeAnchor="bottom" canCloseContents="true"/>
+        <toolWindow factoryClass="com.fyc.dev_tools.TextTransToolWindowFactory" id="TextTrans"
+                    icon="AllIcons.Nodes.TextArea" anchor="right" largeStripeAnchor="right"/>
     </extensions>
 </idea-plugin>
