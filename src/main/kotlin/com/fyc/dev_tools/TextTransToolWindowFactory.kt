@@ -2,179 +2,207 @@ package com.fyc.dev_tools
 
 import ai.grazie.utils.mpp.Base64
 import ai.grazie.utils.mpp.URLEncoder
+import com.fasterxml.jackson.core.type.TypeReference
+import com.fasterxml.jackson.databind.ObjectMapper
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.wm.ToolWindow
 import com.intellij.openapi.wm.ToolWindowFactory
 import com.intellij.ui.JBColor
 import com.intellij.ui.components.JBCheckBox
-import com.intellij.ui.components.JBPanel
-import com.intellij.ui.components.JBTextArea
 import com.intellij.ui.content.ContentFactory
-import com.intellij.util.ui.JBUI
-import java.awt.BorderLayout
-import java.awt.GridLayout
 import java.nio.charset.Charset
-import javax.swing.BoxLayout
+import java.util.*
 import javax.swing.JButton
-import javax.swing.JComponent
 
 
 class TextTransToolWindowFactory : ToolWindowFactory {
+
+    private val urlEncodeText = "Url编码";
+    private val urlDecodeText = "Url解码";
+    private val base64EncodeText = "Base64编码";
+    private val base64DecodeText = "Base64解码";
+    private val unicodeEncodeText = "Unicode编码";
+    private val unicodeDecodeText = "Unicode解码";
+
+    private val formatText = "格式化";
+    private val compressText = "压缩";
+    private val sortText = "排序";
+    private val escSortText = "升序";
+    private val descSortText = "降序";
+
     override fun createToolWindowContent(project: Project, toolWindow: ToolWindow) {
-        val encodeWindow = EncodeWindow(toolWindow)
+        val encodeWindow = WorkWindow(toolWindow)
+        encodeWindowSetting(encodeWindow, toolWindow)
         val encodeContent = ContentFactory.getInstance().createContent(encodeWindow.getContent(), "编解码", false)
         toolWindow.contentManager.addContent(encodeContent, 0)
+
+        val jsonWindow = WorkWindow(toolWindow)
+        jsonWindowSetting(jsonWindow, toolWindow)
+
+        val jsonContent = ContentFactory.getInstance().createContent(jsonWindow.getContent(), "JSON", false)
+        toolWindow.contentManager.addContent(jsonContent, 1)
     }
 
-    class EncodeWindow(toolWindow: ToolWindow) {
-        var toolWindow: ToolWindow = toolWindow
-
-        private val urlEncodeText = "Url编码";
-        private val urlDecodeText = "Url解码";
-        private val base64EncodeText = "Base64编码";
-        private val base64DecodeText = "Base64解码";
-        private val unicodeEncodeText = "Unicode编码";
-        private val unicodeDecodeText = "Unicode解码";
-
-        fun getContent(): JComponent {
-            val jbPanel = JBPanel<JBPanel<*>>()
-            jbPanel.layout = BorderLayout()
-
-            // 功能控制区域
-            val checkBoxJBPanel = JBPanel<JBPanel<*>>()
-            val urlCheckBox = jbCheckBox("Url", true)
-            checkBoxJBPanel.add(urlCheckBox)
-            val base64CheckBox = jbCheckBox("Base64", true)
-            checkBoxJBPanel.add(base64CheckBox)
-            val unicodeCheckBox = jbCheckBox("Unicode", true)
-            checkBoxJBPanel.add(unicodeCheckBox)
-            jbPanel.add(checkBoxJBPanel, BorderLayout.NORTH)
-
-            // 按钮控件
-            val buttonJbPanel = JBPanel<JBPanel<*>>()
-            buttonJbPanel.layout = GridLayout(2, 4)
-            val urlEncode = jButton(urlEncodeText, JBColor.GREEN)
-            buttonJbPanel.add(urlEncode)
-            val urlDecode = jButton(urlDecodeText, JBColor.GREEN)
-            buttonJbPanel.add(urlDecode)
-            val base64Encode = jButton(base64EncodeText, JBColor.YELLOW)
-            buttonJbPanel.add(base64Encode)
-            val base64Decode = jButton(base64DecodeText, JBColor.YELLOW)
-            buttonJbPanel.add(base64Decode)
-            val unicodeEncode = jButton(unicodeEncodeText, JBColor.BLUE)
-            buttonJbPanel.add(unicodeEncode)
-            val unicodeDecode = jButton(unicodeDecodeText, JBColor.BLUE)
-            buttonJbPanel.add(unicodeDecode)
-
-            // 内容区域
-            val contentJbPanel = JBPanel<JBPanel<*>>()
-            contentJbPanel.layout = BoxLayout(contentJbPanel, BoxLayout.Y_AXIS)
-            val input = JBTextArea()
-            input.lineWrap = true
-            input.wrapStyleWord = true
-            input.margin = JBUI.insets(10)
-            val result = JBTextArea()
-            result.lineWrap = true
-            result.wrapStyleWord = true
-            result.margin = JBUI.insets(10)
-            result.isEditable = false
-            contentJbPanel.add(input)
-            contentJbPanel.add(buttonJbPanel)
-            contentJbPanel.add(result)
-            jbPanel.add(contentJbPanel, BorderLayout.CENTER)
-
-            // 监听处理
-            urlCheckBox.addActionListener() {
-                if (urlCheckBox.isSelected) {
-                    buttonJbPanel.add(urlEncode)
-                    buttonJbPanel.add(urlDecode)
-                    toolWindow.hide()
-                    toolWindow.show()
-                } else {
-                    buttonJbPanel.remove(urlEncode)
-                    buttonJbPanel.remove(urlDecode)
-                    toolWindow.hide()
-                    toolWindow.show()
-                }
+    private fun jsonWindowSetting(jsonWindow: WorkWindow, toolWindow: ToolWindow) {
+        val formatCheckBox = jsonWindow.addCheckBox(formatText, true)
+        val compressCheckBox = jsonWindow.addCheckBox(compressText, true)
+        val sortCheckBox = jsonWindow.addCheckBox(sortText, true)
+        jsonWindow.setButtonGrid(1, 2)
+        val formatButton = jsonWindow.addButton(formatText, JBColor.GREEN)
+        val compressButton = jsonWindow.addButton(compressText, JBColor.YELLOW)
+        val escSortButton = jsonWindow.addButton(escSortText, JBColor.BLUE)
+        val descSortButton = jsonWindow.addButton(descSortText, JBColor.BLUE)
+        addListener(toolWindow, jsonWindow, formatCheckBox, formatButton, fun(value: String): String {
+            val typeRef
+                    : TypeReference<Map<String, Any>> = object : TypeReference<Map<String, Any>>() {}
+            val mapper = ObjectMapper()
+            val objectMap: Map<String, Any>
+            try {
+                objectMap = mapper.readValue(value, typeRef)
+                return mapper.writerWithDefaultPrettyPrinter().writeValueAsString(objectMap)
+            } catch (e: Exception) {
+                return e.stackTraceToString()
             }
-            urlEncode.addActionListener {
-                result.text = URLEncoder.encode(input.text)
+        })
+        addListener(toolWindow, jsonWindow, compressCheckBox, compressButton, fun(value: String): String {
+            val typeRef
+                    : TypeReference<Map<String, Any>> = object : TypeReference<Map<String, Any>>() {}
+            val mapper = ObjectMapper()
+            val objectMap: Map<String, Any>
+            try {
+                objectMap = mapper.readValue(value, typeRef)
+                return mapper.writeValueAsString(objectMap)
+            } catch (e: Exception) {
+                return e.stackTraceToString()
             }
-            urlDecode.addActionListener {
-                result.text = URLEncoder.decode(input.text)
+        })
+        addListener(toolWindow, jsonWindow, sortCheckBox, escSortButton, descSortButton, fun(aVal: String): String {
+            val typeRef
+                    : TypeReference<TreeMap<String, Any>> = object : TypeReference<TreeMap<String, Any>>() {}
+            val mapper = ObjectMapper()
+            val objectMap: TreeMap<String, Any>
+            try {
+                objectMap = mapper.readValue(aVal, typeRef)
+                return mapper.writerWithDefaultPrettyPrinter().writeValueAsString(objectMap)
+            } catch (e: Exception) {
+                return e.stackTraceToString()
             }
+        }, fun(bVal: String): String {
+            val typeRef
+                    : TypeReference<TreeMap<String, Any>> = object : TypeReference<TreeMap<String, Any>>() {}
+            val mapper = ObjectMapper()
+            val objectMap: TreeMap<String, Any>
+            try {
+                objectMap = mapper.readValue(bVal, typeRef)
+                return mapper.writerWithDefaultPrettyPrinter().writeValueAsString(objectMap.descendingMap())
+            } catch (e: Exception) {
+                return e.stackTraceToString()
+            }
+        })
+    }
 
-            base64CheckBox.addActionListener {
-                if (base64CheckBox.isSelected) {
-                    buttonJbPanel.add(base64Encode)
-                    buttonJbPanel.add(base64Decode)
-                    toolWindow.hide()
-                    toolWindow.show()
-                } else {
-                    buttonJbPanel.remove(base64Encode)
-                    buttonJbPanel.remove(base64Decode)
-                    toolWindow.hide()
-                    toolWindow.show()
-                }
+    private fun encodeWindowSetting(encodeWindow: WorkWindow, toolWindow: ToolWindow) {
+        val urlCheckBox = encodeWindow.addCheckBox("Url", true)
+        val base64CheckBox = encodeWindow.addCheckBox("Base64", true)
+        val unicodeCheckBox = encodeWindow.addCheckBox("Unicode", true)
+        encodeWindow.setButtonGrid(2, 4)
+        val urlEncode = encodeWindow.addButton(urlEncodeText, JBColor.GREEN)
+        val urlDecode = encodeWindow.addButton(urlDecodeText, JBColor.GREEN)
+        val base64Encode = encodeWindow.addButton(base64EncodeText, JBColor.YELLOW)
+        val base64Decode = encodeWindow.addButton(base64DecodeText, JBColor.YELLOW)
+        val unicodeEncode = encodeWindow.addButton(unicodeEncodeText, JBColor.BLUE)
+        val unicodeDecode = encodeWindow.addButton(unicodeDecodeText, JBColor.BLUE)
+        addListener(toolWindow, encodeWindow, urlCheckBox, urlEncode, urlDecode, fun(enVal: String): String {
+            return URLEncoder.encode(enVal)
+        }, fun(deVal: String): String {
+            return URLEncoder.decode(deVal)
+        })
+        addListener(toolWindow, encodeWindow, base64CheckBox, base64Encode, base64Decode, fun(enVal: String): String {
+            return Base64.encode(enVal.toByteArray())
+        }, fun(deVal: String): String {
+            try {
+                return Base64.decode(deVal).toString(Charset.forName("UTF-8"))
+            } catch (e: Exception) {
+                return e.stackTraceToString()
             }
-            base64Encode.addActionListener {
-                result.text = Base64.encode(input.text.toByteArray())
-            }
-            base64Decode.addActionListener {
-                try {
-                    result.text = Base64.decode(input.text).toString(Charset.forName("UTF-8"))
-                } catch (e: Exception) {
-                    result.text = e.stackTraceToString()
-                }
-            }
-
-            unicodeCheckBox.addActionListener {
-                if (unicodeCheckBox.isSelected) {
-                    buttonJbPanel.add(unicodeEncode)
-                    buttonJbPanel.add(unicodeDecode)
-                    toolWindow.hide()
-                    toolWindow.show()
-                } else {
-                    buttonJbPanel.remove(unicodeEncode)
-                    buttonJbPanel.remove(unicodeDecode)
-                    toolWindow.hide()
-                    toolWindow.show()
-                }
-            }
-            unicodeEncode.addActionListener {
+        })
+        addListener(
+            toolWindow,
+            encodeWindow,
+            unicodeCheckBox,
+            unicodeEncode,
+            unicodeDecode,
+            fun(enVal: String): String {
                 val sb = StringBuilder()
-                for (ch in input.text.toCharArray()) {
+                for (ch in enVal.toCharArray()) {
                     sb.append("\\u").append(Integer.toHexString(ch.code))
                 }
-                result.text = sb.toString()
-            }
-            unicodeDecode.addActionListener() {
-                var strArr: List<String> = input.text.split("\\\\u")
+                return sb.toString()
+            },
+            fun(deVal: String): String {
+                var strArr: List<String> = deVal.split("\\\\u")
                 if (strArr.size == 1) {
-                    strArr = input.text.split("\\u")
+                    strArr = deVal.split("\\u")
                 }
                 val sb = java.lang.StringBuilder()
                 for (i in 1 until strArr.size) {
                     val hexVal = strArr[i].toInt(16)
                     sb.append(hexVal.toChar())
                 }
-                result.text = sb.toString()
+                return sb.toString()
+            })
+    }
+
+    fun addListener(
+        toolWindow: ToolWindow,
+        workWindow: WorkWindow,
+        checkBox: JBCheckBox,
+        aButton: JButton,
+        bButton: JButton,
+        aFunction: (String) -> String,
+        bFunction: (String) -> String
+    ) {
+        checkBox.addActionListener {
+            if (checkBox.isSelected) {
+                workWindow.addButton(aButton)
+                workWindow.addButton(bButton)
+                toolWindow.hide()
+                toolWindow.show()
+            } else {
+                workWindow.removeButton(aButton)
+                workWindow.removeButton(bButton)
+                toolWindow.hide()
+                toolWindow.show()
             }
-
-            return jbPanel
         }
-
-        private fun jButton(text: String, color: JBColor): JButton {
-            val urlEncode = JButton(text)
-            urlEncode.toolTipText = text
-            urlEncode.foreground = color
-            return urlEncode
+        aButton.addActionListener {
+            workWindow.setResult(aFunction(workWindow.getInput()))
         }
+        bButton.addActionListener {
+            workWindow.setResult(bFunction(workWindow.getInput()))
+        }
+    }
 
-        private fun jbCheckBox(text: String, iselected: Boolean): JBCheckBox {
-            val urlCheckBox = JBCheckBox(text)
-            urlCheckBox.isSelected = iselected
-            return urlCheckBox
+    fun addListener(
+        toolWindow: ToolWindow,
+        workWindow: WorkWindow,
+        checkBox: JBCheckBox,
+        button: JButton,
+        function: (String) -> String
+    ) {
+        checkBox.addActionListener {
+            if (checkBox.isSelected) {
+                workWindow.addButton(button)
+                toolWindow.hide()
+                toolWindow.show()
+            } else {
+                workWindow.removeButton(button)
+                toolWindow.hide()
+                toolWindow.show()
+            }
+        }
+        button.addActionListener {
+            workWindow.setResult(function(workWindow.getInput()))
         }
     }
 
